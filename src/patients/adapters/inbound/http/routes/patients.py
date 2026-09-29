@@ -9,8 +9,10 @@ from patients.adapters.inbound.http.dependencies.authorization import (
 from patients.adapters.inbound.http.dependencies.patients import (
     get_create_patient_use_case,
     get_delete_patient_use_case,
+    get_desactivate_patient_use_case,
     get_get_patient_use_case,
     get_list_patients_use_case,
+    get_reactivate_patient_use_case,
     get_update_patient_use_case,
 )
 from patients.adapters.inbound.http.schemas.patient import (
@@ -24,8 +26,14 @@ from patients.application.dtos.list_patients_query import ListPatientsQuery
 from patients.application.dtos.update_patient import UpdatePatientCommand
 from patients.application.use_cases.create_patient import CreatePatientUseCase
 from patients.application.use_cases.delete_patient import DeletePatientUseCase
+from patients.application.use_cases.desactivate_patient import (
+    DesactivatePatientUseCase,
+)
 from patients.application.use_cases.get_patient import GetPatientUseCase
 from patients.application.use_cases.list_patients import ListPatientsUseCase
+from patients.application.use_cases.reactivate_patient import (
+    ReactivatePatientUseCase,
+)
 from patients.application.use_cases.update_patient import UpdatePatientUseCase
 
 router = APIRouter(
@@ -164,3 +172,37 @@ def delete_patient(
     use_case.execute(patient_id)
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch(
+    "/{patient_id}/desactivate",
+    response_model=PatientResponse,
+    dependencies=[Depends(require_permission("patients.delete"))],
+)
+def desactivate_patient(
+    patient_id: str,
+    current_user: CurrentUser,
+    use_case: DesactivatePatientUseCase = Depends(
+        get_desactivate_patient_use_case,
+    ),
+) -> PatientResponse:
+    patient = use_case.execute(patient_id)
+
+    return PatientResponse.model_validate(patient)
+
+
+@router.patch(
+    "/{patient_id}/reactivate",
+    response_model=PatientResponse,
+    dependencies=[Depends(require_permission("patients.update"))],
+)
+def reactivate_patient(
+    patient_id: str,
+    current_user: CurrentUser,
+    use_case: ReactivatePatientUseCase = Depends(
+        get_reactivate_patient_use_case,
+    ),
+) -> PatientResponse:
+    patient = use_case.execute(patient_id)
+
+    return PatientResponse.model_validate(patient)

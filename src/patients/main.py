@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from patients.adapters.inbound.http.dependencies.database import check_db_health
 from patients.adapters.inbound.http.exceptions.patient_exceptions import (
     patient_conflict_exception_handler,
     patient_not_found_exception_handler,
@@ -12,6 +13,7 @@ from patients.application.exceptions.patient_exceptions import (
     PatientConflictApplicationError,
     PatientNotFoundApplicationError,
 )
+from patients.infrastructure.config.settings import settings
 
 app = FastAPI(
     title="Servicio de Pacientes - Diálisis",
@@ -22,10 +24,7 @@ app = FastAPI(
 # Configuración CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,10 +34,11 @@ app.include_router(patients_router)
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health(db_status: str = Depends(check_db_health)) -> dict[str, str]:
     return {
         "status": "ok",
         "service": "patients-microservice",
+        "database": db_status,
     }
 
 

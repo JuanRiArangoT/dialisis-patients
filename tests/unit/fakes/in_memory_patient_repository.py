@@ -62,4 +62,17 @@ class InMemoryPatientRepository(PatientRepositoryPort):
         return patient
 
     def delete(self, patient_id: str) -> None:
-        self.patients.pop(patient_id, None)
+        patient = self.patients.get(patient_id)
+        if patient is not None:
+            self.patients[patient_id] = Patient(
+                id=patient.id,
+                user_id=patient.user_id,
+                tipo_documento=patient.tipo_documento,
+                numero_documento=patient.numero_documento,
+                full_name=patient.full_name,
+                fecha_nacimiento=patient.fecha_nacimiento,
+                telefono=patient.telefono,
+                email=patient.email,
+                direccion=patient.direccion,
+                is_active=False,
+            )

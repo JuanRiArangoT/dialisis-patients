@@ -10,8 +10,14 @@ from patients.adapters.outbound.database.patient_repository import (
 from patients.application.ports.patient_repository import PatientRepositoryPort
 from patients.application.use_cases.create_patient import CreatePatientUseCase
 from patients.application.use_cases.delete_patient import DeletePatientUseCase
+from patients.application.use_cases.desactivate_patient import (
+    DesactivatePatientUseCase,
+)
 from patients.application.use_cases.get_patient import GetPatientUseCase
 from patients.application.use_cases.list_patients import ListPatientsUseCase
+from patients.application.use_cases.reactivate_patient import (
+    ReactivatePatientUseCase,
+)
 from patients.application.use_cases.update_patient import UpdatePatientUseCase
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -57,3 +63,15 @@ def get_delete_patient_use_case(
     repository: PatientRepository,
 ) -> DeletePatientUseCase:
     return DeletePatientUseCase(repository)
+
+
+def get_desactivate_patient_use_case(
+    repository: PatientRepository,
+) -> DesactivatePatientUseCase:
+    return DesactivatePatientUseCase(repository)
+
+
+def get_reactivate_patient_use_case(
+    repository: PatientRepository,
+) -> ReactivatePatientUseCase:
+    return ReactivatePatientUseCase(repository)

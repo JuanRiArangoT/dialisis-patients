@@ -352,14 +352,19 @@ La documentación interactiva es generada automáticamente por FastAPI.
 
 ### Endpoints principales
 
-| Método   | Endpoint                 | Descripción                              |
-| -------- | ------------------------ | ---------------------------------------- |
-| `GET`    | `/health`                | Verificar el estado del servicio         |
-| `POST`   | `/patients`              | Crear un paciente                        |
-| `GET`    | `/patients`              | Listar pacientes                         |
-| `GET`    | `/patients/{patient_id}` | Consultar un paciente por identificador  |
-| `PUT`    | `/patients/{patient_id}` | Actualizar la información de un paciente |
-| `DELETE` | `/patients/{patient_id}` | Eliminar un paciente                     |
+| Método   | Endpoint                            | Descripción                                                 | Permiso requerido |
+| -------- | ----------------------------------- | ----------------------------------------------------------- | ----------------- |
+| `GET`    | `/health`                           | Verificar estado del servicio y conectividad a base de datos| Público           |
+| `POST`   | `/patients`                         | Crear un nuevo paciente                                     | `patients.create` |
+| `GET`    | `/patients`                         | Listar pacientes paginados con búsqueda y filtros           | `patients.read`   |
+| `GET`    | `/patients/{patient_id}`            | Consultar un paciente por identificador                     | `patients.read`   |
+| `PUT`    | `/patients/{patient_id}`            | Actualizar la información completa de un paciente            | `patients.update` |
+| `PATCH`  | `/patients/{patient_id}/desactivate` | Desactivar un paciente (desactivación lógica)               | `patients.delete` |
+| `PATCH`  | `/patients/{patient_id}/reactivate` | Reactivar un paciente previamente inactivo                  | `patients.update` |
+| `DELETE` | `/patients/{patient_id}`            | Eliminación lógica (*soft delete*) de un paciente           | `patients.delete` |
+
+> [!NOTE]
+> **Trazabilidad Médica y Soft Delete**: Por normativas de auditoría médica y conservación de historias clínicas, las eliminaciones de pacientes son lógicas (*soft delete*). El registro físico se preserva en PostgreSQL marcando `is_active = false` para no quebrar la integridad referencial con los futuros microservicios de sesiones de diálisis y prescripciones. Los pacientes inactivos pueden reactivarse en cualquier momento mediante `PATCH /patients/{id}/reactivate`.
 
 Los endpoints protegidos requieren autenticación mediante un token Bearer válido. Las autorizaciones adicionales se aplican de acuerdo con las dependencias configuradas en cada ruta.
 
@@ -457,13 +462,14 @@ La aplicación utiliza Pydantic Settings para cargar la configuración desde var
 
 Las siguientes variables corresponden a la configuración utilizada por el servicio:
 
-| Variable             | Descripción                                  |
-| -------------------- | -------------------------------------------- |
-| `DATABASE_URL`       | Cadena de conexión a PostgreSQL              |
-| `AUTH0_DOMAIN`       | Dominio del tenant de Auth0                  |
-| `AUTH0_API_AUDIENCE` | Audiencia esperada para validar el token JWT |
-| `USERS_SERVICE_URL`  | URL base del microservicio Users             |
-| `ROLES_SERVICE_URL`  | URL base del microservicio Roles             |
+| Variable             | Descripción                                                          |
+| -------------------- | -------------------------------------------------------------------- |
+| `DATABASE_URL`       | Cadena de conexión a PostgreSQL                                      |
+| `AUTH0_DOMAIN`       | Dominio del tenant de Auth0                                          |
+| `AUTH0_API_AUDIENCE` | Audiencia esperada para validar el token JWT                         |
+| `USERS_SERVICE_URL`  | URL base del microservicio Users                                     |
+| `ROLES_SERVICE_URL`  | URL base del microservicio Roles                                     |
+| `CORS_ORIGINS`       | Orígenes permitidos para CORS (separados por coma o lista JSON)       |
 
 Ejemplo de configuración local:
 
@@ -475,6 +481,8 @@ AUTH0_API_AUDIENCE=https://tu-api/
 
 USERS_SERVICE_URL=http://localhost:8001
 ROLES_SERVICE_URL=http://localhost:8002
+
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
 En Docker, las URLs de los microservicios deben utilizar los nombres de los contenedores y sus puertos internos.

@@ -157,7 +157,8 @@ class PostgresPatientRepository(PatientRepositoryPort):
         )
 
         if model is not None:
-            self._session.delete(model)
+            model.is_active = False
+            model.updated_at = datetime.now(UTC)
             self._session.commit()
 
     @staticmethod

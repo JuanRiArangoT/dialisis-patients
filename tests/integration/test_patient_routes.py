@@ -7,7 +7,33 @@ def test_health_check(client: TestClient) -> None:
     assert response.json() == {
         "status": "ok",
         "service": "patients-microservice",
+        "database": "connected",
     }
+
+
+def test_health_check_database_unhealthy(client: TestClient) -> None:
+    from fastapi import HTTPException
+
+    from patients.adapters.inbound.http.dependencies.database import check_db_health
+    from patients.main import app
+
+    def broken_db() -> str:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "unhealthy",
+                "service": "patients-microservice",
+                "database": "disconnected",
+            },
+        )
+
+    app.dependency_overrides[check_db_health] = broken_db
+    try:
+        response = client.get("/health")
+        assert response.status_code == 503
+        assert response.json()["detail"]["database"] == "disconnected"
+    finally:
+        app.dependency_overrides[check_db_health] = lambda: "connected"
 
 
 def test_create_patient_success(client: TestClient) -> None:
@@ -220,11 +246,36 @@ def test_delete_patient_flow(client: TestClient) -> None:
     del_res = client.delete(f"/patients/{patient_id}")
     assert del_res.status_code == 204
 
-    # Verify patient is gone
+    # Verify patient is marked inactive (soft deleted), not physically purged
     get_res = client.get(f"/patients/{patient_id}")
-    assert get_res.status_code == 404
+    assert get_res.status_code == 200
+    assert get_res.json()["is_active"] is False
 
 
 def test_delete_patient_not_found(client: TestClient) -> None:
     del_res = client.delete("/patients/id-fantasma")
     assert del_res.status_code == 404
+
+
+def test_desactivate_and_reactivate_patient_endpoints(client: TestClient) -> None:
+    create_res = client.post(
+        "/patients",
+        json={
+            "tipo_documento": "CC",
+            "numero_documento": "55512345",
+            "full_name": "Paciente Reactivable",
+            "fecha_nacimiento": "1992-06-10",
+        },
+    )
+    patient_id = create_res.json()["patient_id"]
+    assert create_res.json()["is_active"] is True
+
+    # Desactivate via PATCH
+    deact_res = client.patch(f"/patients/{patient_id}/desactivate")
+    assert deact_res.status_code == 200
+    assert deact_res.json()["is_active"] is False
+
+    # Reactivate via PATCH
+    react_res = client.patch(f"/patients/{patient_id}/reactivate")
+    assert react_res.status_code == 200
+    assert react_res.json()["is_active"] is True

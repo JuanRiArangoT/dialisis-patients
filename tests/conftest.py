@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from patients.adapters.inbound.http.dependencies.auth0_jwt import (
     get_current_user,
 )
+from patients.adapters.inbound.http.dependencies.database import check_db_health
 from patients.adapters.inbound.http.dependencies.patients import (
     get_patient_repository,
 )
@@ -24,6 +25,7 @@ def fake_repository() -> InMemoryPatientRepository:
 @pytest.fixture
 def client(fake_repository: InMemoryPatientRepository) -> Generator[TestClient]:
     app.dependency_overrides[get_patient_repository] = lambda: fake_repository
+    app.dependency_overrides[check_db_health] = lambda: "connected"
     app.dependency_overrides[get_current_user] = lambda: {
         "sub": "auth0|test-user-id",
         "name": "Test User",
