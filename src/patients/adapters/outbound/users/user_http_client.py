@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 
 
@@ -8,7 +10,7 @@ class UserHttpClient:
     def get_authorization_user(
         self,
         token: str,
-    ) -> dict:
+    ) -> dict[str, Any]:
         response = httpx.get(
             f"{self._base_url}/users/authorization/me",
             headers={"Authorization": f"Bearer {token}"},

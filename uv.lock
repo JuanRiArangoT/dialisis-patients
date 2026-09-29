@@ -205,6 +205,7 @@ dependencies = [
     { name = "alembic" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "psycopg2-binary" },
     { name = "pydantic-settings" },
     { name = "pyjwt", extra = ["crypto"] },
@@ -214,7 +215,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pytest" },
     { name = "ruff" },
 ]
@@ -224,6 +224,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.20.0" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "psycopg2-binary" },
     { name = "pydantic-settings" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.15.1" },
@@ -233,7 +234,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "ruff", specifier = ">=0.16.9" },
 ]

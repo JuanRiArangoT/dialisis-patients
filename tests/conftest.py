@@ -9,6 +9,9 @@ from patients.adapters.inbound.http.dependencies.auth0_jwt import (
 from patients.adapters.inbound.http.dependencies.patients import (
     get_patient_repository,
 )
+from patients.adapters.inbound.http.routes.patients import (
+    router as patients_router,
+)
 from patients.main import app
 from tests.unit.fakes.in_memory_patient_repository import InMemoryPatientRepository
 
@@ -26,6 +29,12 @@ def client(fake_repository: InMemoryPatientRepository) -> Generator[TestClient]:
         "name": "Test User",
         "email": "test@example.com",
     }
+
+    # Override all require_permission dependencies in patients router
+    for route in patients_router.routes:
+        for dep in getattr(route, "dependencies", []):
+            if dep.dependency:
+                app.dependency_overrides[dep.dependency] = lambda: None
 
     with TestClient(app) as test_client:
         yield test_client

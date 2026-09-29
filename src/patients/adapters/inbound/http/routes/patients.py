@@ -36,6 +36,7 @@ router = APIRouter(
     "",
     response_model=PatientResponse,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("patients.create"))],
 )
 def create_patient(
     request: CreatePatientRequest,
@@ -79,6 +80,7 @@ def list_patients(
 @router.get(
     "/{patient_id}",
     response_model=PatientResponse,
+    dependencies=[Depends(require_permission("patients.read"))],
 )
 def get_patient(
     patient_id: str,
@@ -95,6 +97,7 @@ def get_patient(
 @router.put(
     "/{patient_id}",
     response_model=PatientResponse,
+    dependencies=[Depends(require_permission("patients.update"))],
 )
 def update_patient(
     patient_id: str,
@@ -127,6 +130,7 @@ def update_patient(
 @router.delete(
     "/{patient_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_permission("patients.delete"))],
 )
 def delete_patient(
     patient_id: str,
