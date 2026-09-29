@@ -1,0 +1,14 @@
+services:
+  patients:
+    build: .
+    container_name: dialisis-patients
+    ports:
+      - "8003:8000"
+    env_file:
+      - .env
+    networks:
+      - dialisis-network
+
+networks:
+  dialisis-network:
+    external: true
