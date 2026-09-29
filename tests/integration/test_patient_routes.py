@@ -76,7 +76,13 @@ def test_create_patient_duplicate_document_returns_409(client: TestClient) -> No
 def test_list_patients_flow(client: TestClient) -> None:
     initial_res = client.get("/patients")
     assert initial_res.status_code == 200
-    assert initial_res.json() == []
+    assert initial_res.json() == {
+        "items": [],
+        "total": 0,
+        "page": 1,
+        "page_size": 20,
+        "total_pages": 0,
+    }
 
     client.post(
         "/patients",
@@ -99,10 +105,41 @@ def test_list_patients_flow(client: TestClient) -> None:
 
     list_res = client.get("/patients")
     assert list_res.status_code == 200
-    patients = list_res.json()
-    assert len(patients) == 2
-    assert patients[0]["full_name"] == "Alvaro Lopez"
-    assert patients[1]["full_name"] == "Beto Perez"
+    data = list_res.json()
+    assert data["total"] == 2
+    assert data["page"] == 1
+    assert data["total_pages"] == 1
+    assert len(data["items"]) == 2
+    assert data["items"][0]["full_name"] == "Alvaro Lopez"
+    assert data["items"][1]["full_name"] == "Beto Perez"
+
+
+def test_list_patients_with_search_and_pagination(client: TestClient) -> None:
+    for i in range(1, 6):
+        client.post(
+            "/patients",
+            json={
+                "tipo_documento": "CC",
+                "numero_documento": f"ID-{i}",
+                "full_name": f"Paciente {i}",
+                "fecha_nacimiento": "1985-05-05",
+            },
+        )
+
+    # Test page_size=2
+    res_page_1 = client.get("/patients?page=1&page_size=2")
+    assert res_page_1.status_code == 200
+    data_1 = res_page_1.json()
+    assert data_1["total"] == 5
+    assert data_1["total_pages"] == 3
+    assert len(data_1["items"]) == 2
+
+    # Test search by document
+    res_search = client.get("/patients?search=ID-3")
+    assert res_search.status_code == 200
+    data_search = res_search.json()
+    assert data_search["total"] == 1
+    assert data_search["items"][0]["numero_documento"] == "ID-3"
 
 
 def test_get_patient_by_id(client: TestClient) -> None:

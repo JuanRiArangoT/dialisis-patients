@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -81,6 +81,43 @@ class PostgresPatientRepository(PatientRepositoryPort):
         models = self._session.scalars(statement).all()
 
         return [self._to_entity(model) for model in models]
+
+    def get_paginated(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        is_active: bool | None = None,
+    ) -> tuple[list[Patient], int]:
+        statement = select(PatientModel)
+
+        if is_active is not None:
+            statement = statement.where(PatientModel.is_active == is_active)
+
+        if search:
+            clean_search = search.strip()
+            if clean_search:
+                pattern = f"%{clean_search}%"
+                statement = statement.where(
+                    or_(
+                        PatientModel.full_name.ilike(pattern),
+                        PatientModel.numero_documento.ilike(pattern),
+                    )
+                )
+
+        count_statement = select(func.count()).select_from(statement.subquery())
+        total = self._session.scalar(count_statement) or 0
+
+        offset = (page - 1) * page_size
+        paginated_statement = (
+            statement.order_by(PatientModel.full_name.asc())
+            .offset(offset)
+            .limit(page_size)
+        )
+
+        models = self._session.scalars(paginated_statement).all()
+
+        return [self._to_entity(model) for model in models], total
 
     def update(self, patient: Patient) -> Patient:
         model = self._session.get(

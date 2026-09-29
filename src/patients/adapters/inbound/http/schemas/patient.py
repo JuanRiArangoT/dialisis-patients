@@ -63,3 +63,11 @@ class PatientResponse(BaseModel):
     email: str | None
     direccion: str | None
     is_active: bool
+
+
+class PaginatedPatientResponse(BaseModel):
+    items: list[PatientResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

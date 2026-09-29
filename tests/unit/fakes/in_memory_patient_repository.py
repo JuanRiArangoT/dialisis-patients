@@ -28,6 +28,33 @@ class InMemoryPatientRepository(PatientRepositoryPort):
     def get_all(self) -> list[Patient]:
         return sorted(self.patients.values(), key=lambda p: p.full_name)
 
+    def get_paginated(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        is_active: bool | None = None,
+    ) -> tuple[list[Patient], int]:
+        filtered = list(self.patients.values())
+
+        if is_active is not None:
+            filtered = [p for p in filtered if p.is_active == is_active]
+
+        if search:
+            query = search.strip().lower()
+            if query:
+                filtered = [
+                    p
+                    for p in filtered
+                    if query in p.full_name.lower()
+                    or query in p.numero_documento.lower()
+                ]
+
+        filtered.sort(key=lambda p: p.full_name)
+        total = len(filtered)
+        offset = (page - 1) * page_size
+        return filtered[offset : offset + page_size], total
+
     def update(self, patient: Patient) -> Patient:
         if patient.id not in self.patients:
             raise ValueError(f"Patient not found: {patient.id}")

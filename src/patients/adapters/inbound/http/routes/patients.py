@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from patients.adapters.inbound.http.dependencies.auth0_jwt import (
     CurrentUser,
@@ -15,10 +15,12 @@ from patients.adapters.inbound.http.dependencies.patients import (
 )
 from patients.adapters.inbound.http.schemas.patient import (
     CreatePatientRequest,
+    PaginatedPatientResponse,
     PatientResponse,
     UpdatePatientRequest,
 )
 from patients.application.dtos.create_patient import CreatePatientCommand
+from patients.application.dtos.list_patients_query import ListPatientsQuery
 from patients.application.dtos.update_patient import UpdatePatientCommand
 from patients.application.use_cases.create_patient import CreatePatientUseCase
 from patients.application.use_cases.delete_patient import DeletePatientUseCase
@@ -63,18 +65,38 @@ def create_patient(
 
 @router.get(
     "",
-    response_model=list[PatientResponse],
+    response_model=PaginatedPatientResponse,
     dependencies=[Depends(require_permission("patients.read"))],
 )
 def list_patients(
     current_user: CurrentUser,
+    page: int = Query(1, ge=1, description="Número de página"),
+    page_size: int = Query(
+        20, ge=1, le=100, description="Cantidad de elementos por página"
+    ),
+    search: str | None = Query(None, description="Búsqueda por nombre o documento"),
+    is_active: bool | None = Query(
+        None, description="Filtrar por estado activo/inactivo"
+    ),
     use_case: ListPatientsUseCase = Depends(
         get_list_patients_use_case,
     ),
-) -> list[PatientResponse]:
-    patients = use_case.execute()
+) -> PaginatedPatientResponse:
+    query = ListPatientsQuery(
+        page=page,
+        page_size=page_size,
+        search=search,
+        is_active=is_active,
+    )
+    result = use_case.execute(query)
 
-    return [PatientResponse.model_validate(patient) for patient in patients]
+    return PaginatedPatientResponse(
+        items=[PatientResponse.model_validate(patient) for patient in result.items],
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+        total_pages=result.total_pages,
+    )
 
 
 @router.get(

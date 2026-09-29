@@ -409,6 +409,46 @@ El identificador `patient_id` es generado por el servicio.
 
 Los valores de documento y correo del ejemplo son ilustrativos y deben reemplazarse por datos de prueba únicos al realizar nuevas solicitudes.
 
+### Ejemplo de listado paginado y búsqueda
+
+Solicitud:
+
+```http
+GET /patients?page=1&page_size=20&search=Prueba&is_active=true
+Authorization: Bearer <access_token>
+```
+
+Parámetros opcionales:
+- `page`: Número de página (entero >= 1, por defecto `1`).
+- `page_size`: Cantidad de resultados por página (entero entre 1 y 100, por defecto `20`).
+- `search`: Búsqueda insensible a mayúsculas/minúsculas sobre el nombre completo (`full_name`) o documento (`numero_documento`).
+- `is_active`: Filtrar pacientes activos (`true`) o inactivos (`false`).
+
+Respuesta de ejemplo:
+
+```json
+{
+  "items": [
+    {
+      "patient_id": "9590a6a7-1f23-4d5b-8bd9-e3e8055e52f5",
+      "user_id": null,
+      "tipo_documento": "CC",
+      "numero_documento": "1234567891",
+      "full_name": "Paciente Prueba",
+      "fecha_nacimiento": "1990-01-15",
+      "telefono": "3001234567",
+      "email": "paciente@example.com",
+      "direccion": "Medellín",
+      "is_active": true
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 20,
+  "total_pages": 1
+}
+```
+
 ---
 
 ## ⚙️ Variables de Entorno

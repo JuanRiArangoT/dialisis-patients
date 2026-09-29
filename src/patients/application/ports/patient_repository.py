@@ -31,6 +31,16 @@ class PatientRepositoryPort(ABC):
         pass
 
     @abstractmethod
+    def get_paginated(
+        self,
+        page: int,
+        page_size: int,
+        search: str | None = None,
+        is_active: bool | None = None,
+    ) -> tuple[list[Patient], int]:
+        pass
+
+    @abstractmethod
     def update(self, patient: Patient) -> Patient:
         pass
 

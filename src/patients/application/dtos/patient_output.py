@@ -14,3 +14,12 @@ class PatientOutputDTO:
     email: str | None
     direccion: str | None
     is_active: bool
+
+
+@dataclass(frozen=True)
+class PaginatedPatientsOutputDTO:
+    items: list[PatientOutputDTO]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

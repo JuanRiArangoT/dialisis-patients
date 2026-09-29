@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 
 from patients.application.dtos.create_patient import CreatePatientCommand
+from patients.application.dtos.list_patients_query import ListPatientsQuery
 from patients.application.dtos.update_patient import UpdatePatientCommand
 from patients.application.exceptions.patient_exceptions import (
     PatientConflictApplicationError,
@@ -135,7 +136,10 @@ def test_list_patients_empty_and_populated(
 ) -> None:
     use_case = ListPatientsUseCase(repository)
 
-    assert use_case.execute() == []
+    empty_result = use_case.execute()
+    assert empty_result.items == []
+    assert empty_result.total == 0
+    assert empty_result.total_pages == 0
 
     repository.create(
         Patient(
@@ -159,9 +163,51 @@ def test_list_patients_empty_and_populated(
     )
 
     results = use_case.execute()
-    assert len(results) == 2
-    assert results[0].full_name == "Andres Perez"
-    assert results[1].full_name == "Berta Gomez"
+    assert results.total == 2
+    assert results.total_pages == 1
+    assert len(results.items) == 2
+    assert results.items[0].full_name == "Andres Perez"
+    assert results.items[1].full_name == "Berta Gomez"
+
+
+def test_list_patients_pagination_and_search(
+    repository: InMemoryPatientRepository,
+) -> None:
+    for i in range(1, 11):
+        repository.create(
+            Patient(
+                id=f"p-{i}",
+                user_id=None,
+                tipo_documento="CC",
+                numero_documento=f"DOC-{i:03d}",
+                full_name=f"Paciente {i:02d}",
+                fecha_nacimiento=date(1980, 1, 1),
+                is_active=(i % 2 == 0),
+            )
+        )
+
+    use_case = ListPatientsUseCase(repository)
+
+    # Page 1 with page_size=4
+    page_1 = use_case.execute(ListPatientsQuery(page=1, page_size=4))
+    assert page_1.total == 10
+    assert page_1.total_pages == 3
+    assert len(page_1.items) == 4
+    assert page_1.items[0].full_name == "Paciente 01"
+
+    # Page 3 with page_size=4 (should have 2 items remaining)
+    page_3 = use_case.execute(ListPatientsQuery(page=3, page_size=4))
+    assert len(page_3.items) == 2
+
+    # Filter search by document
+    search_doc = use_case.execute(ListPatientsQuery(search="005"))
+    assert search_doc.total == 1
+    assert search_doc.items[0].numero_documento == "DOC-005"
+
+    # Filter by is_active=True (should find 5 active patients)
+    active_result = use_case.execute(ListPatientsQuery(is_active=True))
+    assert active_result.total == 5
+    assert all(p.is_active for p in active_result.items)
 
 
 def test_update_patient_success(repository: InMemoryPatientRepository) -> None:
